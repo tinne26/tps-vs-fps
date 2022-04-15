@@ -26,10 +26,10 @@ Let's start with *fixed timestep loops*. Using a fixed timestep and letting the 
 
 On the other hand, there are also some downsides:
 - Fixed timesteps can slow down your whole game if the game starts lagging.
-- Interpolations based on fixed timesteps may not be as smooth as those based on variable time deltas.
+- Interpolations based on fixed timesteps may not be as smooth as those based on finer variable time deltas.
 
 Let's look at *variable time deltas* now:
-- Simulation can be smoother and tied to a variable frame rate.
+- Simulation can be smoother under a variable frame rate.
 
 - Time computations are more complex.
 
@@ -71,15 +71,15 @@ You may have `Update` be called multiple times consecutively before `Draw`, or t
 
 In some cases —for example when working with shaders—, if you want some visual effect to be as smooth as possible and have good reason to believe that `Update` will be called fairly less often than `Draw` (so, TPS are lower than FPS), computing time deltas may make sense. In most cases, though, worrying about time deltas in Ebiten causes more harm than good. If you have read this document and understand the differences clearly, do whatever you want. Otherwise, keep your hands out of `time.Now()` and continue trying to understand.
 
-What you should **never** do is computing time deltas in the `Update` method. Computing variable time deltas in a method that's part of a fixed timestep loop is ~~morally reproachable~~ not cool, and you should suspect anyone who does that of not understanding the difference between TPS and FPS, between fixed timesteps and variable time deltas, between `Update` and `Draw`.
+What you should **never** do is computing time deltas in the `Update` method: if computing elapsed times in a method that's part of a fixed timestep loop doesn't trigger any alarms, you probably still don't fully grasp the difference between TPS and FPS, between fixed timesteps and variable time deltas, between `Update` and `Draw`.
 
 **Can I change TPS during the game?**
 
 The API allows it, and Hajime Hoshi mentioned using it to implement a turbo mode for a game. It's really hard to come up with reasonable use-cases for it outside a few tricks like these, though.
 
-**But you are wrong.** 
+**But you are wrong about...** 
 
-Feel free to drop by [Ebiten's discord server](https://discord.gg/3tVdM5H8cC) and duel.
+Feel free to drop by [Ebiten's discord server](https://discord.gg/3tVdM5H8cC) and duel ;)
 
 ## Quick summary
 - `Update` is called on a **fixed timestep loop** controlled by the TPS (ticks per second).
