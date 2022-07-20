@@ -26,15 +26,12 @@ Let's start with *fixed timestep loops*. Using a fixed timestep and letting the 
 
 On the other hand, there are also some downsides:
 - Fixed timesteps can slow down your whole game if the game starts lagging.
-- Interpolations based on fixed timesteps may not be as smooth as those based on finer variable time deltas.
+- Interpolations based on fixed timesteps, by default, will not be as smooth as those based on finer variable time deltas on high refresh rate displays.
 
 Let's look at *variable time deltas* now:
 - Simulation can be smoother under a variable frame rate.
-
 - Time computations are more complex.
-
 - Time deltas tied to the game logic will make the game non-deterministic.
-
 - Too big time deltas can break your game. The classic example are bullets going through walls due to missing the collision window (too much lag causing the time delta to grow too big), but there are many other ways in which things can go wrong. 
 
   Notice how the Godot game engine specifically named its fixed timestep loop *physics processing*, highlighting how this is an important issue and why you generally don't want your physics and some other elements of your game to be processed with variable time deltas.
@@ -46,30 +43,30 @@ If you are working with Ebitengine, though, **those are almost never your main c
 ## Back to Ebitengine: Update vs Draw
 Ebitengine has two main methods that you have to implement to make your game work: `Update` and `Draw`. As we have seen, `Update` is called regularly based on the ticks per second (TPS) configured for your game. On the other hand, `Draw` will be called based on the refresh rate of your screen. If your screen has a refresh rate of 60FPS, by default Ebitengine will try to call `Draw` 60 times each second.
 
-Your main logic should be processed on `Update`, using the fixed timestep. If you need smoother visual effects (maybe related to shaders), you may compute delta times by yourself in the `Draw` method, but understand that this is rarely needed; don't complicate your own life unless you have a good reason for it.
+Your main logic should be processed on `Update`, using the fixed timestep. If you need smoother visual effects (maybe related to shaders), you may compute delta times by yourself in the `Draw` method... but as a rule of thumb I'd suggest to not complicate your own life unless you have a good reason for it.
 
-In very rare cases (*stares fixedly at “very rare”*), one may decide to use only time deltas and process all the logic inside `Draw` itself.
+In some special cases one may decide to use only time deltas and process all the logic inside `Draw` itself, but this would be the exception in Ebitengine and is beyond the scope of this document.
 
 If the game lags, Ebitengine will prioritize TPS over FPS in order to avoid the game slowing down. Some people get really concerned about this, but if your game lags what you should be doing is profiling and optimizing your code, *not worrying about time deltas*.
 
 ## Other common concerns
 **But TPS are not fixed? `CurrentTPS` can return different values? How is that reliable?**
 
-If your game is not lagging, `Update` may be called a few microseconds early or late, but TPS will be stable and compensated in the long run. You won't be losing time or advancing in time unless the game starts *lagging a lot* (and in that case, you should start profiling and optimizing instead).
+If your game is not lagging, the average rate at which `Update` is called may vary slightly, but TPS will be stable and compensated in the long run. You won't be losing time or advancing in time unless the game starts *lagging a lot* (and in that case, you should start profiling and optimizing instead).
 
-`CurrentTPS` is mostly a debug method that you can use while developing to keep track of the game performance. That said, the best method to keep track of your game's performance is to set `FPSModeVsyncOffMaximum` (only for development, not releases!) and displaying the `CurrentFPS` value in the screen. FPS will start fluctuating earlier than TPS if something is lagging.
+`CurrentTPS` is mostly a debug method that you can use while developing to keep track of the game performance. That said, the best method to keep track of your game's performance is setting `FPSModeVsyncOffMaximum` (only for development, not releases!) and displaying the `CurrentFPS` value on the screen. FPS will start fluctuating earlier than TPS if something is lagging.
 
 **But I learned that using time deltas is the way to do things right!**
 
-It's the main method to manage time in most game engines and the main topic of most "game loop implementation" tutorials. That explains why a lot of people is confused when working with Ebitengine, but the "Fixed timestep vs variable deltas" section already discussed the advantages and disadvantages of each method; for a library like Ebitengine, the fixed timestep loop makes perfect sense.
+It's the main method to manage time in most game engines and the main topic of most "game loop implementation" tutorials. That explains why a lot of people is confused when working with Ebitengine, but the "Fixed timestep vs variable deltas" section already discussed the advantages and disadvantages of each method; for a library like Ebitengine, using a fixed timestep loop makes sense as the go-to approach.
 
 **But if `Update` and `Draw` can be called at different rates, that's... weird?**
 
-You may have `Update` be called multiple times consecutively before `Draw`, or the other way around. It's good to keep this in mind in order to avoid developing an incorrect mental model of how the main Ebitengine loop works, but once you understand it it's not that surprising.
+You may have `Update` be called multiple times consecutively before `Draw`, or the other way around. It's good to keep this in mind in order to avoid developing an incorrect mental model of how the main Ebitengine loop works, but once you understand that TPS and FPS can each go at their own pace it is not that surprising.
 
 **But is it still reasonable to compute time deltas if I really need them?**
 
-In some cases —for example when working with shaders—, if you want some visual effect to be as smooth as possible and have good reason to believe that `Update` will be called fairly less often than `Draw` (so, TPS are lower than FPS), computing time deltas may make sense. In most cases, though, worrying about time deltas in Ebitengine causes more harm than good. If you have read this document and understand the differences clearly, do whatever you want. Otherwise, keep your hands out of `time.Now()` and continue trying to understand.
+In some cases —for example when working with shaders—, if you want some visual effect to be as smooth as possible and have good reason to believe that `Update` will be called fairly less often than `Draw` (so, TPS are lower than FPS), computing time deltas may make sense. It can also make sense for some games that want to support high refresh rate displays as smoothly as possible. In most cases, though, worrying about time deltas in Ebitengine causes more harm than good. If you have read this document and understand the differences clearly, do whatever you want. Otherwise, keep your hands out of `time.Now()` and continue trying to understand.
 
 What you should **never** do is computing time deltas in the `Update` method: if computing elapsed times in a method that's part of a fixed timestep loop doesn't trigger any alarms, you probably still don't fully grasp the difference between TPS and FPS, between fixed timesteps and variable time deltas, between `Update` and `Draw`.
 
