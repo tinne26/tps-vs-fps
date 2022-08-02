@@ -41,7 +41,7 @@ Most modern games are actually using both methods for different parts of the gam
 If you are working with Ebitengine, though, **those are almost never your main concerns**. Ebitengine is mostly used for 2D games, which will often feature low resolution assets, pixel art, shrimps and choppy animations. Here, keeping it simple and preserving determinism are typically more important than smoothness under astringent performance constraints. You should have enough headroom to make your games work properly even on lower end devices while using only the fixed timestep `Update` method.
 
 ## Back to Ebitengine: Update vs Draw
-Ebitengine has two main methods that you have to implement to make your game work: `Update` and `Draw`. As we have seen, `Update` is called regularly based on the ticks per second (TPS) configured for your game. On the other hand, `Draw` will be called based on the refresh rate of your screen. If your screen has a refresh rate of 60FPS, by default Ebitengine will try to call `Draw` 60 times each second.
+Ebitengine has two main methods that you have to implement to make your game work: `Update` and `Draw`. As we have seen, `Update` is called regularly based on the ticks per second (TPS) configured for your game. On the other hand, `Draw` will be called based on the refresh rate of your screen. If your screen has a refresh rate of 60Hz, by default Ebitengine will try to call `Draw` 60 times each second (60FPS).
 
 Your main logic should be processed on `Update`, using the fixed timestep. If you need smoother visual effects (maybe related to shaders), you may compute delta times by yourself in the `Draw` method... but as a rule of thumb I'd suggest to not complicate your own life unless you have a good reason for it.
 
