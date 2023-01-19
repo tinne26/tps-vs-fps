@@ -11,17 +11,17 @@ How do you update the shrimp's position? At which point? How much? Do you use a 
 
 Well, *it depends*. Most modern game engines offer two ways to work with time:
 - **Delta times**: the time elapsed between frames. This can vary depending on the frames per second (FPS) the game is running at. With delta times, you could figure out how much to move the shrimp at each frame by multiplying the elapsed time and the shrimp's speed. Classic physics.
-- **Fixed timestep loops**: fixed timestep loops allow a function to be called periodically, at a fixed interval, so you can pretend that time passes uniformly between updates. With a fixed timestep loop, you could move the shrimp a fixed distance on each update. If you wanted your shrimp to move 100 pixels per second and your fixed timestep was 1/50 seconds, on each update you would want to move the shrimp `100*(1/50) = 2` pixels.
+- **Fixed timestep loops**: fixed timestep loops allow a function to be called periodically so you can pretend that time passes uniformly between updates. With a fixed timestep loop, you would move the shrimp a fixed distance on each update. If you wanted your shrimp to move 100 pixels per second and your fixed timestep was 1/50 seconds, on each update you would move the shrimp `100*(1/50) = 2` pixels.
 
 For example, in [Unity](https://docs.unity3d.com/Manual/TimeFrameManagement.html) you have `Time.deltaTime` and `Time.fixedDeltaTime`. In [Godot](https://docs.godotengine.org/en/stable/tutorials/scripting/idle_and_physics_processing.html), instead, you have separate methods for *idle processing* (frame by frame) and *physics processing* (fixed timestep).
 
-In Ebitengine, the `Update` function is part of a *fixed timestep loop*, and it's called based on the ticks per second (TPS) of your game. By default, Ebitengine's TPS is 60, which means that the `Update` method will be called 60 times per second. In other words, unless you modify the TPS with [`SetMaxTPS`](https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#SetMaxTPS), the fixed timestep will be `1000/60 = 16.666` milliseconds. To use delta times, instead, you would use the standard Golang `time` package, but we won't talk about this now.
+In Ebitengine, the `Update` function is part of a *fixed timestep loop*, and it's called based on the ticks per second (TPS) of your game. By default, Ebitengine's TPS is 60, which means that the `Update` method will be called 60 times per second. In other words, unless you modify the TPS with [`SetTPS`](https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#SetTPS), the fixed timestep will be `1000/60 = 16.666` milliseconds. To use delta times, instead, you would use the standard Golang `time` package, but we won't talk about this now.
 
 So... if **both approaches can be used, what should you do?** Well, in Ebitengine, you almost always want to stick to `Update` and the fixed timestep loop... but to understand why, we first need to talk about the advantages and disadvantages of each method.
 
 ## Fixed timestep vs variable deltas
 Let's start with *fixed timestep loops*. Using a fixed timestep and letting the game engine call your game's update method seems like the easiest way to make games:
-- You can assume time passes uniformly. You don't need tricky delta time calculations (or even any time calculations at all).
+- You can assume time passes uniformly[^1]. You don't need tricky delta time calculations (or even any time calculations at all).
 - You can make your game deterministic, storing inputs for replays or faking them for in-game scenes or automated testing.
 
 On the other hand, there are also some downsides:
@@ -50,11 +50,15 @@ In some special cases one may decide to use only time deltas and process all the
 If the game lags, Ebitengine will prioritize TPS over FPS in order to avoid the game slowing down. Some people get really concerned about this, but if your game lags what you should be doing is profiling and optimizing your code, *not worrying about time deltas*.
 
 ## Other common concerns
-**But TPS are not fixed? `CurrentTPS` can return different values? How is that reliable?**
+**But TPS are not fixed? `ActualTPS` can return different values? How is that reliable?**
 
-If your game is not lagging, the average rate at which `Update` is called may vary slightly, but TPS will be stable and compensated in the long run. You won't be losing time or advancing in time unless the game starts *lagging a lot* (and in that case, you should start profiling and optimizing instead).
+If your game is not lagging, the average rate at which `Update` is called may vary slightly, but TPS will be stable and compensated in the long run[^1]. You won't be losing time or advancing in time unless the game starts *lagging a lot* (and in that case, you should start profiling and optimizing instead).
 
-`CurrentTPS` is mostly a debug method that you can use while developing to keep track of the game performance. That said, the best method to keep track of your game's performance is setting `FPSModeVsyncOffMaximum` (only for development, not releases!) and displaying the `CurrentFPS` value on the screen. FPS will start fluctuating earlier than TPS if something is lagging.
+`ActualTPS` is mostly a debug method that you can use while developing to keep track of the game performance. That said, a good method to keep track of your game's performance is setting `FPSModeVsyncOffMaximum` (only for development, not releases!) and displaying the `ActualFPS` value on the screen or the title bar:
+```Golang
+ebiten.SetWindowTitle(fmt.Sprintf("Game Title | %.2ffps", ebiten.ActualFPS())
+```
+FPS will start fluctuating earlier than TPS if something is lagging.
 
 **But I learned that using time deltas is the way to do things right!**
 
@@ -84,3 +88,5 @@ Feel free to drop by [Ebitengine's discord server](https://discord.gg/3tVdM5H8cC
 - You rarely need to compute time deltas on your games. Use fixed values and rely on `Update` being called at fixed intervals instead.
 - If you are computing time deltas in your game anyway, it should only be in the `Draw` method.
 - For the kind of games developed in Ebitengine, the *ease of use and determinism* provided by a fixed timestep loop are typically more important than *smoothness and responsiveness under high system pressure*. Ebitengine games rarely lead to high system pressure, so they should be able to perform stably.
+
+[^1]: There are some subtleties, actually. Time only passes uniformly between visual updates (graphical frames), not necessarily between multiple `Update` calls. Internally, Ebitengine calls all the "accumulated" or "pending" updates sequentially in a `for` loop, without any waits. This means that if your update method does very little work and TPS and FPS differ or get momentarily out of sync, you may receive multiple consecutive calls to `Update` with virtually no real time elapsed between them. You should not make any assumptions about the real time elapsed between `Update` calls: updates correspond to "simulation steps", but they don't control the synchronization of their corresponding visuals. That's controlled by the graphical buffer swaps that Ebitengine issues after each `Draw`.
