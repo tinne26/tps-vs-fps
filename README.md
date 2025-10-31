@@ -22,7 +22,7 @@ So... if **both approaches can be used, what should you do?** Well, in Ebitengin
 ## Fixed timestep vs variable deltas
 Let's start with *fixed timestep loops*. Using a fixed timestep and letting the game engine call your game's update method seems like the easiest way to make games:
 - You can assume time passes uniformly[^1]. You don't need tricky delta time calculations (or even any time calculations at all).
-- You can make your game deterministic, storing inputs for replays or faking them for in-game scenes or automated testing.
+- It's easier to make your game deterministic, storing inputs for replays or faking them for in-game scenes or automated testing.
 
 On the other hand, there are also some downsides:
 - Fixed timesteps can slow down your whole game if the game starts lagging.
